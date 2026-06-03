@@ -1,0 +1,365 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-1234-56789abcdef0",
+    "name": "FIT4110_lab03_team-gate",
+    "description": "Postman Collection for Team 10: Access Gate (Consumer) <-> Core Policy (Provider).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01_Functional",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has status ok\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.eql(\"ok\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Check Access - Valid Card (Allow)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "123e4567-e89b-12d3-a456-426614174000" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cardId\": \"RFID-2026-123\",\n  \"gateId\": \"GATE-01\",\n  \"timestamp\": \"2026-06-03T08:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/access/check",
+              "host": ["{{baseUrl}}"],
+              "path": ["access", "check"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has ALLOW or DENY decision\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"decisionId\");",
+                  "    pm.expect([\"ALLOW\", \"DENY\"]).to.include(jsonData.status);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Decision Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/decisions/550e8400-e29b-41d4-a716-446655440001",
+              "host": ["{{baseUrl}}"],
+              "path": ["decisions", "550e8400-e29b-41d4-a716-446655440001"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02_Auth",
+      "item": [
+        {
+          "name": "Check Access - Missing Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "123e4567-e89b-12d3-a456-426614174001" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cardId\": \"RFID-2026-123\",\n  \"gateId\": \"GATE-01\",\n  \"timestamp\": \"2026-06-03T08:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/access/check",
+              "host": ["{{baseUrl}}"],
+              "path": ["access", "check"]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Unauthorized request returns 401 or 403\", function () {",
+                  "    pm.expect([401, 403]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03_Negative",
+      "item": [
+        {
+          "name": "Check Access - Invalid Payload (Missing field)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "123e4567-e89b-12d3-a456-426614174002" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cardId\": \"RFID-2026-123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/access/check",
+              "host": ["{{baseUrl}}"],
+              "path": ["access", "check"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Invalid payload returns client error 400 or 422\", function () {",
+                  "    pm.expect([400, 422]).to.include(pm.response.code);",
+                  "});",
+                  "",
+                  "pm.test(\"Error response follows ProblemDetails format\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"status\");",
+                  "    pm.expect(jsonData.status).to.be.within(400, 599);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04_Boundary_Reliability",
+      "item": [
+        {
+          "name": "Check Access - Duplicate Idempotency Key",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "123e4567-e89b-12d3-a456-426614174000" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cardId\": \"RFID-2026-123\",\n  \"gateId\": \"GATE-01\",\n  \"timestamp\": \"2026-06-03T08:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/access/check",
+              "host": ["{{baseUrl}}"],
+              "path": ["access", "check"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Expect Conflict (409) or Success if perfectly cached\", function () {",
+                  "    pm.expect([200, 409]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05_Consumer_side_Smoke",
+      "item": [
+        {
+          "name": "Consumer calls Policy Service (Smoke)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/policies/access/POL-DEFAULT-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["policies", "access", "POL-DEFAULT-01"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 or 401\", function () {",
+                  "    pm.expect([200, 401]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06_Local_only_NonFunctional",
+      "item": [
+        {
+          "name": "Check Access - Local Latency SLA",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "123e4567-e89b-12d3-a456-426614174099" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cardId\": \"RFID-2026-123\",\n  \"gateId\": \"GATE-01\",\n  \"timestamp\": \"2026-06-03T08:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/access/check",
+              "host": ["{{baseUrl}}"],
+              "path": ["access", "check"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.environment.get(\"env\") === \"local\") {",
+                  "    pm.test(\"Response time is below 500ms on local service for Gate operation\", function () {",
+                  "        pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

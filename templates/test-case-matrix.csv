@@ -1,6 +1,9 @@
-ID,Folder,Endpoint,Method,Scenario,Input file/body,Expected status,Expected response check,Type,Pass/Fail,Evidence
-TC01,Functional,/health,GET,Service is alive,-,200,status=ok,functional,,
-TC02,Functional,/readings,POST,Create reading happy path,mock-data/sensor-reading-valid.json,201,"has reading_id, accepted=true",functional,,
-TC03,Negative,/readings,POST,Missing device_id,mock-data/sensor-reading-invalid-missing-device.json,400,Problem Details,negative,,
-TC04,Auth,/readings,POST,Missing token,mock-data/sensor-reading-valid.json,401,Problem Details,auth,,
-TC05,Boundary,/readings,POST,High temperature boundary,mock-data/sensor-reading-boundary.json,201/400,documented behavior,boundary,,
+Test ID,Endpoint,Method,Scenario,Expected Status,Test Type,Environment
+TC-01,/health,GET,Health check,200,Functional,mock/local
+TC-02,/access/check,POST,Valid Card (Allow),200,Functional,mock/local
+TC-03,/decisions/{decisionId},GET,Get Decision Details,200,Functional,mock/local
+TC-04,/access/check,POST,Missing Token,401,Auth,mock/local
+TC-05,/access/check,POST,Invalid Payload (Missing field),422,Negative,mock/local
+TC-06,/access/check,POST,Duplicate Idempotency Key,200 or 409,Boundary/Reliability,mock/local
+TC-07,/policies/access/{id},GET,Consumer calls Policy Service (Smoke),200 or 401,Consumer-side,mock/local
+TC-08,/access/check,POST,Local Latency SLA,200,NonFunctional,local
